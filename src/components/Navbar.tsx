@@ -14,9 +14,12 @@ export default function Navbar({ user, onLogout, onLoginClick }: NavbarProps) {
   const navLinks = [
     { name: 'Konkurslar', href: '#contests' },
     { name: 'CTF', href: '#ctf' },
+    { name: 'Kod yozish', href: '#coding' },
+    { name: 'Testlar', href: '#quizzes' },
+    ...(user ? [{ name: 'Sertifikatlar', href: '#certificates' }] : []),
     { name: 'Reyting', href: '#leaderboard' },
     ...(user ? [] : [{ name: 'Ro\'yxatdan o\'tish', href: '#register' }]),
-    ...(user?.role === 'admin' ? [{ name: 'Admin', href: '#admin' }] : []),
+    ...(user?.role === 'admin' ? [{ name: 'Boshqaruv paneli', href: '#admin' }] : []),
   ];
 
   return (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bot, Send, Sparkles, ShieldCheck, Cpu, Globe, Code2, Search, Microscope, Undo2, Lock, X } from 'lucide-react';
+import { Bot, Send, Sparkles, ShieldCheck, Cpu, Globe, Code2, Search, Microscope, Undo2, Lock, X, BookOpen } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
@@ -8,17 +8,20 @@ import CompetitionCard from './components/CompetitionCard';
 import Leaderboard from './components/Leaderboard';
 import Stats from './components/Stats';
 import CTFSection from './components/CTFSection';
+import QuizSection from './components/QuizSection';
+import CodingSection from './components/CodingSection';
 import Registration from './components/Registration';
 import Login from './components/Login';
 import AdminPanel from './components/AdminPanel';
+import CertificatesList from './components/CertificatesList';
 
 const categories = [
   { name: 'Capture The Flag (CTF)', icon: Globe, desc: 'Kiberxavfsizlikni o\'rganish va amaliyot o\'tash uchun eng yaxshi yo\'l.', color: 'text-cyber-blue' },
+  { name: 'Kod Yozish Bellashuvlari', icon: Code2, desc: 'Algoritmlar va dasturlash bo\'yicha real vaqtda kod yozish musobaqalari.', color: 'text-cyber-green' },
+  { name: 'Kiber-Testlar', icon: BookOpen, desc: 'Bilimingizni sinang va xalqaro darajadagi sertifikatlarni qo\'lga kiriting.', color: 'text-cyber-purple' },
   { name: 'Bug Bounty Dasturlari', icon: Search, desc: 'Haqiqiy tizimlardagi zaifliklarni toping va real pul mukofotlarini yuting.', color: 'text-yellow-500' },
-  { name: 'Xavfsiz Dasturlash', icon: Code2, desc: 'Xavfsiz dasturlash bo\'yicha musobaqalar. Algoritmlar, shifrlash usullari.', color: 'text-cyber-green' },
   { name: 'Penetration Testing', icon: ShieldCheck, desc: 'To\'liq pentest laboratoriyalari. Network scanning, vulnerability assessment.', color: 'text-cyber-red' },
   { name: 'Digital Forensics', icon: Microscope, desc: 'Raqamli dalillarni tahlil qilish. Memory analysis, traffic analysis.', color: 'text-cyber-purple' },
-  { name: 'Reverse Engineering', icon: Undo2, desc: 'Dasturlarni teskari muhandislik qilish. Malware analysis, crackmes.', color: 'text-orange-500' },
 ];
 
 export default function App() {
@@ -31,6 +34,7 @@ export default function App() {
     { role: 'ai', text: 'Salom! Men CyberChampions AI yordamchisiman. Kiberxavfsizlik yoki konkurslar haqida savolingiz bormi?' }
   ]);
   const [isTyping, setIsTyping] = useState(false);
+  const [certUpdateTrigger, setCertUpdateTrigger] = useState(0);
 
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return;
@@ -143,6 +147,10 @@ export default function App() {
         {user ? (
           <>
             <CTFSection />
+            <section id="coding">
+              <CodingSection />
+            </section>
+            <QuizSection userId={user.id} onQuizPassed={() => setCertUpdateTrigger(prev => prev + 1)} />
 
             {/* Live Contests Section */}
             <section id="contests" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -171,6 +179,17 @@ export default function App() {
             </section>
 
             <Leaderboard />
+
+            {/* User Certificates Section */}
+            <section id="certificates" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="mb-12">
+                <h2 className="text-3xl md:text-5xl font-display font-black uppercase tracking-tight mb-4">
+                  🏅 MENING <span className="text-cyber-green">SERTIFIKATLARIM</span>
+                </h2>
+                <p className="text-slate-400">Siz qo'lga kiritgan barcha yutuqlar va sertifikatlar shu yerda jamlangan.</p>
+              </div>
+              <CertificatesList userId={user.id} updateTrigger={certUpdateTrigger} />
+            </section>
 
             {user.role === 'admin' && <AdminPanel />}
           </>

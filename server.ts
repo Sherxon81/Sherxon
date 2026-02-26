@@ -49,7 +49,46 @@ db.exec(`
     username TEXT UNIQUE,
     email TEXT UNIQUE,
     password TEXT,
-    role TEXT DEFAULT 'user'
+    role TEXT DEFAULT 'user',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS quizzes (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    description TEXT,
+    category TEXT,
+    min_score INTEGER
+  );
+
+  CREATE TABLE IF NOT EXISTS quiz_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    quiz_id TEXT,
+    question TEXT,
+    options TEXT, -- JSON string array
+    correct_answer INTEGER, -- index of options
+    FOREIGN KEY(quiz_id) REFERENCES quizzes(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS user_quiz_results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    quiz_id TEXT,
+    score INTEGER,
+    passed BOOLEAN,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(quiz_id) REFERENCES quizzes(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS certificates (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER,
+    quiz_id TEXT,
+    issue_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    certificate_code TEXT UNIQUE,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(quiz_id) REFERENCES quizzes(id)
   );
 `);
 
@@ -57,6 +96,27 @@ db.exec(`
 const adminExists = db.prepare("SELECT * FROM users WHERE username = 'admin'").get();
 if (!adminExists) {
   db.prepare("INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)").run('admin', 'admin@cyber.uz', 'admin123', 'admin');
+}
+
+// Seed Quizzes
+const quizCount = db.prepare("SELECT count(*) as count FROM quizzes").get() as { count: number };
+if (quizCount.count === 0) {
+  const quizId = 'q1';
+  db.prepare("INSERT INTO quizzes (id, title, description, category, min_score) VALUES (?, ?, ?, ?, ?)")
+    .run(quizId, 'Kiberxavfsizlik Asoslari', 'Kiberxavfsizlik bo\'yicha boshlang\'ich bilimlar testi', 'Security', 70);
+  
+  const questions = [
+    { q: 'SQL Injection nima?', o: ['Ma\'lumotlar bazasiga hujum', 'Veb-sayt dizaynini o\'zgartirish', 'Email yuborish'], a: 0 },
+    { q: 'HTTPS protokoli qaysi portda ishlaydi?', o: ['80', '443', '21'], a: 1 },
+    { q: 'Eng xavfsiz parol qaysi?', o: ['123456', 'password', 'Cyb3r_Ch4mp!ons_2024'], a: 2 },
+    { q: 'Phishing nima?', o: ['Baliq ovi', 'Foydalanuvchi ma\'lumotlarini aldab olish', 'Virus turi'], a: 1 },
+    { q: 'Firewall nima uchun kerak?', o: ['Internetni tezlashtirish', 'Tarmoq trafigini filtrlash', 'Kompyuterni sovutish'], a: 1 }
+  ];
+
+  questions.forEach(q => {
+    db.prepare("INSERT INTO quiz_questions (quiz_id, question, options, correct_answer) VALUES (?, ?, ?, ?)")
+      .run(quizId, q.q, JSON.stringify(q.o), q.a);
+  });
 }
 
 // Seed data if empty
@@ -173,6 +233,67 @@ async function startServer() {
     } else {
       res.json({ success: false });
     }
+  });
+
+  // Admin: Get all users
+  app.get('/api/admin/users', (req, res) => {
+    const users = db.prepare("SELECT id, username, email, role, created_at FROM users").all();
+    res.json(users);
+  });
+
+  // Quizzes
+  app.get('/api/quizzes', (req, res) => {
+    const quizzes = db.prepare("SELECT * FROM quizzes").all();
+    res.json(quizzes);
+  });
+
+  app.get('/api/quizzes/:id/questions', (req, res) => {
+    const questions = db.prepare("SELECT id, question, options FROM quiz_questions WHERE quiz_id = ?").all(req.params.id);
+    const formatted = questions.map((q: any) => ({
+      ...q,
+      options: JSON.parse(q.options)
+    }));
+    res.json(formatted);
+  });
+
+  app.post('/api/quizzes/submit', (req, res) => {
+    const { userId, quizId, answers } = req.body; // answers is { questionId: answerIndex }
+    const questions = db.prepare("SELECT id, correct_answer FROM quiz_questions WHERE quiz_id = ?").all(quizId) as any[];
+    
+    let correctCount = 0;
+    questions.forEach(q => {
+      if (answers[q.id] === q.correct_answer) {
+        correctCount++;
+      }
+    });
+
+    const score = Math.round((correctCount / questions.length) * 100);
+    const quiz = db.prepare("SELECT min_score FROM quizzes WHERE id = ?").get(quizId) as any;
+    const passed = score >= quiz.min_score;
+
+    db.prepare("INSERT INTO user_quiz_results (user_id, quiz_id, score, passed) VALUES (?, ?, ?, ?)")
+      .run(userId, quizId, score, passed ? 1 : 0);
+
+    let certificate = null;
+    if (passed) {
+      const certId = `CERT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      const certCode = `CC-${Date.now()}-${userId}`;
+      db.prepare("INSERT INTO certificates (id, user_id, quiz_id, certificate_code) VALUES (?, ?, ?, ?)")
+        .run(certId, userId, quizId, certCode);
+      certificate = { id: certId, code: certCode };
+    }
+
+    res.json({ score, passed, certificate });
+  });
+
+  app.get('/api/users/:userId/certificates', (req, res) => {
+    const certs = db.prepare(`
+      SELECT c.*, q.title as quiz_title 
+      FROM certificates c 
+      JOIN quizzes q ON c.quiz_id = q.id 
+      WHERE c.user_id = ?
+    `).all(req.params.userId);
+    res.json(certs);
   });
 
   // Vite middleware for development
