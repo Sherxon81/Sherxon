@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Space Grotesk", sans-serif;
+
+  --color-cyber-blue: #00f3ff;
+  --color-cyber-green: #00ff88;
+  --color-cyber-purple: #9d4edd;
+  --color-cyber-red: #ff003c;
+  --color-cyber-bg: #0a0a0f;
+  --color-cyber-card: #12121e;
+}
+
+@layer base {
+  body {
+    @apply bg-cyber-bg text-slate-300 font-sans selection:bg-cyber-blue/30;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-bold tracking-tight text-white;
+  }
+}
+
+@layer components {
+  .neon-border {
+    @apply border border-white/10 relative overflow-hidden;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.05);
+  }
+
+  .neon-border::after {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(45deg, transparent, rgba(0, 243, 255, 0.1), transparent);
+  }
+
+  .neon-border:hover::after {
+    @apply opacity-100;
+  }
+
+  .cyber-button {
+    @apply relative px-6 py-2 font-display font-bold uppercase tracking-wider transition-all duration-200 active:scale-95 disabled:opacity-50;
+    clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+  }
+
+  .cyber-button-primary {
+    @apply bg-cyber-blue text-black hover:bg-white hover:shadow-[0_0_20px_rgba(0,243,255,0.5)];
+  }
+
+  .cyber-button-outline {
+    @apply border border-cyber-blue text-cyber-blue hover:bg-cyber-blue/10;
+  }
+
+  .glass-panel {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+
+  .matrix-bg {
+    background-image: linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.scanline {
+  @apply fixed inset-0 pointer-events-none z-50 opacity-[0.03];
+  background: linear-gradient(to bottom, transparent, #00f3ff, transparent);
+  height: 10px;
+  animation: scanline 8s linear infinite;
+}
+
+.glow-text-blue {
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.glow-text-green {
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
