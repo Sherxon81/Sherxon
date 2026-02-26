@@ -1,15 +1,22 @@
-import { Shield, Menu, X, User, Trophy, Terminal } from 'lucide-react';
+import { Shield, Menu, X, User, Trophy, Terminal, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export default function Navbar() {
+interface NavbarProps {
+  user: any;
+  onLogout: () => void;
+  onLoginClick: () => void;
+}
+
+export default function Navbar({ user, onLogout, onLoginClick }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
     { name: 'Konkurslar', href: '#contests' },
+    { name: 'CTF', href: '#ctf' },
     { name: 'Reyting', href: '#leaderboard' },
-    { name: 'Kategoriyalar', href: '#categories' },
-    { name: 'Resurslar', href: '#resources' },
+    ...(user ? [] : [{ name: 'Ro\'yxatdan o\'tish', href: '#register' }]),
+    ...(user?.role === 'admin' ? [{ name: 'Admin', href: '#admin' }] : []),
   ];
 
   return (
@@ -36,9 +43,28 @@ export default function Navbar() {
                   {link.name}
                 </a>
               ))}
-              <button className="cyber-button cyber-button-primary text-xs">
-                Kirish
-              </button>
+              
+              {user ? (
+                <div className="flex items-center gap-4 pl-4 border-l border-white/10">
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs font-bold text-white uppercase tracking-widest">{user.username}</span>
+                    <span className="text-[10px] text-cyber-green font-mono uppercase">{user.role}</span>
+                  </div>
+                  <button 
+                    onClick={onLogout}
+                    className="p-2 text-slate-400 hover:text-cyber-red transition-colors"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={onLoginClick}
+                  className="cyber-button cyber-button-primary text-xs"
+                >
+                  Kirish
+                </button>
+              )}
             </div>
           </div>
 
@@ -73,9 +99,21 @@ export default function Navbar() {
                 </a>
               ))}
               <div className="pt-4">
-                <button className="w-full cyber-button cyber-button-primary">
-                  Kirish
-                </button>
+                {user ? (
+                  <button 
+                    onClick={() => { onLogout(); setIsOpen(false); }}
+                    className="w-full cyber-button border border-cyber-red text-cyber-red"
+                  >
+                    Chiqish
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => { onLoginClick(); setIsOpen(false); }}
+                    className="w-full cyber-button cyber-button-primary"
+                  >
+                    Kirish
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

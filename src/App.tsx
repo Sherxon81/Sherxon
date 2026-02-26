@@ -1,51 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bot, Send, Sparkles, ShieldCheck, Cpu, Globe, Code2, Search, Microscope, Undo2 } from 'lucide-react';
+import { Bot, Send, Sparkles, ShieldCheck, Cpu, Globe, Code2, Search, Microscope, Undo2, Lock, X } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import CompetitionCard from './components/CompetitionCard';
 import Leaderboard from './components/Leaderboard';
 import Stats from './components/Stats';
-
-const competitions = [
-  {
-    title: "Milliy CTF Chempionati 2024",
-    type: "CTF" as const,
-    prize: "$5,000",
-    description: "O'zbekiston bo'ylab eng yaxshi hakerlar uchun. Web, Crypto, Reverse Engineering, PWN, Forensics yo'nalishlari.",
-    timeLeft: "12:45:30",
-    participants: 423,
-    color: "#00f3ff"
-  },
-  {
-    title: "Bahor Bug Bounty Dasturi",
-    type: "BUG BOUNTY" as const,
-    prize: "$10,000",
-    description: "\"SecureBank\" tizimidagi zaifliklarni toping. SQL Injection, XSS, CSRF, Authentication bypass mukofotlari.",
-    timeLeft: "20 kun qoldi",
-    participants: 187,
-    color: "#ffd700"
-  },
-  {
-    title: "Secure Code Warrior 2024",
-    type: "CODING" as const,
-    prize: "$3,000",
-    description: "Xavfsiz dasturlash bo'yicha musobaqa. Buffer overflow prevention, input validation, encryption algorithms.",
-    timeLeft: "3:15:20",
-    participants: 312,
-    color: "#00ff88"
-  },
-  {
-    title: "Web Application Pentesting",
-    type: "WEB PENTEST" as const,
-    prize: "$7,500",
-    description: "Real veb ilovalarni penetration testing qilish. OWASP Top 10 zaifliklarni exploit qilish va hisobot yozish.",
-    timeLeft: "5 kun qoldi",
-    participants: 156,
-    color: "#ff003c"
-  }
-];
+import CTFSection from './components/CTFSection';
+import Registration from './components/Registration';
+import Login from './components/Login';
+import AdminPanel from './components/AdminPanel';
 
 const categories = [
   { name: 'Capture The Flag (CTF)', icon: Globe, desc: 'Kiberxavfsizlikni o\'rganish va amaliyot o\'tash uchun eng yaxshi yo\'l.', color: 'text-cyber-blue' },
@@ -57,6 +22,9 @@ const categories = [
 ];
 
 export default function App() {
+  const [user, setUser] = useState<any>(null);
+  const [authView, setAuthView] = useState<'login' | 'register' | null>(null);
+  const [competitions, setCompetitions] = useState<any[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
@@ -91,41 +59,140 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    // Load user from localStorage if exists
+    const savedUser = localStorage.getItem('cyber_user');
+    if (savedUser) setUser(JSON.parse(savedUser));
+
+    fetch('/api/competitions')
+      .then(res => res.json())
+      .then(data => setCompetitions(data))
+      .catch(err => console.error("Failed to fetch competitions:", err));
+  }, []);
+
+  const handleLogin = (userData: any) => {
+    setUser(userData);
+    localStorage.setItem('cyber_user', JSON.stringify(userData));
+    setAuthView(null);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('cyber_user');
+  };
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleAuthClick = (view: 'login' | 'register') => {
+    setAuthView(view);
+    setTimeout(() => scrollToSection('auth-section'), 50);
+  };
+
   return (
     <div className="min-h-screen relative">
       <div className="scanline" />
-      <Navbar />
+      <Navbar 
+        user={user} 
+        onLogout={handleLogout} 
+        onLoginClick={() => handleAuthClick('login')} 
+      />
       
       <main>
-        <Hero />
+        <Hero 
+          onStart={() => {
+            if (!user) {
+              handleAuthClick('register');
+            } else {
+              scrollToSection('ctf');
+            }
+          }}
+          onViewCompetitions={() => scrollToSection('contests')}
+        />
+        
+        <div id="auth-section">
+          <AnimatePresence mode="wait">
+            {!user && authView && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                {authView === 'register' ? (
+                  <Registration 
+                    onRegister={handleLogin} 
+                    onSwitchToLogin={() => setAuthView('login')} 
+                  />
+                ) : (
+                  <Login 
+                    onLogin={handleLogin} 
+                    onSwitchToRegister={() => setAuthView('register')} 
+                  />
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         
         <Stats />
 
-        {/* Live Contests Section */}
-        <section id="contests" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-            <div>
-              <h2 className="text-3xl md:text-5xl font-display font-black uppercase tracking-tight mb-4">
-                🔴 JORIY <span className="text-cyber-blue">KONKURSLAR</span>
-              </h2>
-              <p className="text-slate-400">Hozir o'tayotgan musobaqalarda qatnashing va o'z mahoratingizni ko'rsating</p>
-            </div>
-            <div className="flex gap-2">
-              <button className="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-white/10 bg-white/5 text-slate-400 hover:text-white transition-colors">
-                Barchasi
-              </button>
-              <button className="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-cyber-blue/30 bg-cyber-blue/5 text-cyber-blue">
-                Faol
-              </button>
-            </div>
-          </div>
+        {user ? (
+          <>
+            <CTFSection />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {competitions.map((comp, idx) => (
-              <CompetitionCard key={idx} {...comp} />
-            ))}
-          </div>
-        </section>
+            {/* Live Contests Section */}
+            <section id="contests" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+                <div>
+                  <h2 className="text-3xl md:text-5xl font-display font-black uppercase tracking-tight mb-4">
+                    🔴 JORIY <span className="text-cyber-blue">KONKURSLAR</span>
+                  </h2>
+                  <p className="text-slate-400">Hozir o'tayotgan musobaqalarda qatnashing va o'z mahoratingizni ko'rsating</p>
+                </div>
+                <div className="flex gap-2">
+                  <button className="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-white/10 bg-white/5 text-slate-400 hover:text-white transition-colors">
+                    Barchasi
+                  </button>
+                  <button className="px-4 py-2 text-xs font-bold uppercase tracking-widest border border-cyber-blue/30 bg-cyber-blue/5 text-cyber-blue">
+                    Faol
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {competitions.map((comp, idx) => (
+                  <CompetitionCard key={idx} {...comp} />
+                ))}
+              </div>
+            </section>
+
+            <Leaderboard />
+
+            {user.role === 'admin' && <AdminPanel />}
+          </>
+        ) : (
+          <section className="py-24 bg-black/20 border-y border-white/5">
+            <div className="max-w-7xl mx-auto px-4 text-center">
+              <div className="w-20 h-20 bg-cyber-blue/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Lock className="w-10 h-10 text-cyber-blue" />
+              </div>
+              <h2 className="text-3xl font-display font-black mb-4 uppercase">KONTENT <span className="text-cyber-blue">YASHIRILGAN</span></h2>
+              <p className="text-slate-400 max-w-md mx-auto mb-8">
+                Musobaqalar va CTF topshiriqlarini ko'rish uchun tizimga kiring yoki ro'yxatdan o'ting.
+              </p>
+              <button 
+                onClick={() => handleAuthClick('login')}
+                className="cyber-button cyber-button-primary px-10 py-4"
+              >
+                Hozir Kirish
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Categories Section */}
         <section id="categories" className="py-24 bg-white/[0.01]">
@@ -153,25 +220,28 @@ export default function App() {
           </div>
         </section>
 
-        <Leaderboard />
-
         {/* Call to Action */}
-        <section className="py-24">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="relative p-12 rounded-3xl overflow-hidden text-center border border-cyber-blue/20 bg-gradient-to-br from-cyber-blue/10 to-transparent">
-              <div className="absolute top-0 left-0 w-full h-full matrix-bg opacity-10 -z-10" />
-              <h2 className="text-4xl md:text-6xl font-display font-black mb-6 uppercase tracking-tight">
-                HAKERLIKNI <span className="text-cyber-blue">BOSHLANG</span>
-              </h2>
-              <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
-                Bugun ro'yxatdan o'ting va O'zbekistonning eng kuchli kiberxavfsizlik hamjamiyatiga qo'shiling.
-              </p>
-              <button className="cyber-button cyber-button-primary py-5 px-12 text-lg">
-                Hozir Ro'yxatdan O'tish
-              </button>
+        {!user && (
+          <section className="py-24">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="relative p-12 rounded-3xl overflow-hidden text-center border border-cyber-blue/20 bg-gradient-to-br from-cyber-blue/10 to-transparent">
+                <div className="absolute top-0 left-0 w-full h-full matrix-bg opacity-10 -z-10" />
+                <h2 className="text-4xl md:text-6xl font-display font-black mb-6 uppercase tracking-tight">
+                  HAKERLIKNI <span className="text-cyber-blue">BOSHLANG</span>
+                </h2>
+                <p className="text-xl text-slate-400 mb-10 max-w-2xl mx-auto">
+                  Bugun ro'yxatdan o'ting va O'zbekistonning eng kuchli kiberxavfsizlik hamjamiyatiga qo'shiling.
+                </p>
+                <button 
+                  onClick={() => setAuthView('register')}
+                  className="cyber-button cyber-button-primary py-5 px-12 text-lg"
+                >
+                  Hozir Ro'yxatdan O'tish
+                </button>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       {/* Footer */}
@@ -306,11 +376,5 @@ export default function App() {
         </AnimatePresence>
       </div>
     </div>
-  );
-}
-
-function X({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
   );
 }

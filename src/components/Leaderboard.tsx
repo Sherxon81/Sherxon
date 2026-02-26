@@ -1,14 +1,16 @@
 import { Trophy, Medal, Crown } from 'lucide-react';
-
-const topHackers = [
-  { rank: 1, name: 'Sherxon Xudoyberdiyev', username: 'Sherxon_75', score: 3450, competitions: 8, country: 'UZ', status: 'online' },
-  { rank: 2, name: 'Ghost Hacker', username: 'ghost', score: 2850, competitions: 6, country: 'UZ', status: 'online' },
-  { rank: 3, name: 'Zero Cool', username: 'zerocool', score: 2120, competitions: 5, country: 'US', status: 'offline' },
-  { rank: 4, name: 'Crypto Master', username: 'crypto', score: 1980, competitions: 7, country: 'UZ', status: 'online' },
-  { rank: 5, name: 'Web Slayer', username: 'webslayer', score: 1050, competitions: 4, country: 'DE', status: 'offline' },
-];
+import { useState, useEffect } from 'react';
 
 export default function Leaderboard() {
+  const [topHackers, setTopHackers] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/leaderboard')
+      .then(res => res.json())
+      .then(data => setTopHackers(data))
+      .catch(err => console.error("Failed to fetch leaderboard:", err));
+  }, []);
+
   return (
     <section id="leaderboard" className="py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

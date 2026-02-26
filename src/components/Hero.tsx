@@ -1,7 +1,12 @@
 import { motion } from 'motion/react';
 import { Rocket, Eye, Terminal, ShieldAlert } from 'lucide-react';
 
-export default function Hero() {
+interface HeroProps {
+  onStart: () => void;
+  onViewCompetitions: () => void;
+}
+
+export default function Hero({ onStart, onViewCompetitions }: HeroProps) {
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background Elements */}
@@ -34,11 +39,17 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className="w-full sm:w-auto cyber-button cyber-button-primary flex items-center justify-center gap-2 py-4 px-8">
+            <button 
+              onClick={onStart}
+              className="w-full sm:w-auto cyber-button cyber-button-primary flex items-center justify-center gap-2 py-4 px-8"
+            >
               <Rocket className="w-5 h-5" />
               Qatnashishni Boshlash
             </button>
-            <button className="w-full sm:w-auto cyber-button cyber-button-outline flex items-center justify-center gap-2 py-4 px-8">
+            <button 
+              onClick={onViewCompetitions}
+              className="w-full sm:w-auto cyber-button cyber-button-outline flex items-center justify-center gap-2 py-4 px-8"
+            >
               <Eye className="w-5 h-5" />
               Konkurslarni Ko'rish
             </button>
