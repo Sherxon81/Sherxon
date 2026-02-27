@@ -77,7 +77,7 @@ export default function CertificatesList({ userId, updateTrigger }: { userId: nu
         <div key={cert.id} className="relative group">
           {/* Hidden Certificate Template for PDF Generation */}
           <div 
-            ref={el => certRefs.current[cert.id] = el}
+            ref={el => { certRefs.current[cert.id] = el; }}
             className="fixed -left-[9999px] top-0 w-[800px] p-12 bg-[#0a0a0a] border-[16px] border-cyber-green/20 text-center font-sans"
           >
             <div className="border-4 border-cyber-green/30 p-12 relative">
